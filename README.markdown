@@ -89,6 +89,10 @@ TODO: perform=false, overrides for krb5.conf (DNS aliases) and kdc.conf (algorit
 <a name="parameters"></a>
 #### Parameters
 
+#####`acl`
+
+ACL to Kerberos database. Default: "puppet/admin@${realm} ci \*@${realm}"
+
 #####`client_packages`
 
 List of Kerberos client packages. Default: *$::kerberos::params::client\_packages*.
@@ -177,6 +181,16 @@ Automagically deploy all services on the nodes. Default: true.
 #####`realm`
 
 Kerberos realm name. Required.
+
+#####`remote_password`
+
+Password of the principal for remote access to KDC. Default: undef.
+
+**Required** for initial bootstrap.
+
+#####`remote_principal`
+
+Principal name for remote access to KDC. Default: "puppet/admin@$realm".
 
 <a name="limitations"></a>
 ##Limitations

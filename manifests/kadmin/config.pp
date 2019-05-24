@@ -8,11 +8,19 @@ class kerberos::kadmin::config() {
 
   if $::kerberos::kdc_conf_dir != $::kerberos::kdc_data_dir {
     file { $::kerberos::kdc_data_dir:
-        ensure => 'directory',
-        owner  => 'root',
-        group  => 'root',
-        mode   => '0700',
+      ensure => 'directory',
+      owner  => 'root',
+      group  => 'root',
+      mode   => '0700',
     }
+  }
+
+  $acl = $::kerberos::_acl
+  file{"${::kerberos::kdc_conf_dir}/kadm5.acl":
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0644',
+    content => template('kerberos/kadm5.acl.erb'),
   }
 
   $kdc_data_dir = $::kerberos::kdc_data_dir

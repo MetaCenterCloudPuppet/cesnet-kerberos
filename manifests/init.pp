@@ -4,6 +4,7 @@
 #
 class kerberos(
   $realm,
+  $acl = [],
   $client_packages = $::kerberos::params::client_packages,
   $client_properties = undef,
   $kadmin_service = $::kerberos::params::kadmin_service,
@@ -17,6 +18,8 @@ class kerberos(
   $krb5_conf = $::kerberos::params::default_krb5_conf,
   $master_password = undef,
   $perform = true,
+  $remote_password = undef,
+  $remote_principal = undef,
 ) inherits kerberos::params {
   include ::stdlib
 
@@ -28,6 +31,9 @@ class kerberos(
     $_kdc_hostnames = concat([$_kadmin_hostname], pick($kdc_hostnames, []))
   }
   $kprop_hostnames = difference($_kdc_hostnames, [$_kdc_hostnames[0]])
+
+  $_remote_principal = pick($remote_principal, "puppet/admin@${realm}")
+  $_acl = concat(["${_remote_principal}	ci	host/*@${realm}"], $acl)
 
   $_client_properties = deep_merge({
     'libdefaults' => {

@@ -9,6 +9,7 @@ describe 'kerberos::kadmin::config', :type => 'class' do
       end
       it { should compile.with_all_deps }
       it { should contain_file("#{path}/kdc.conf") }
+      it { should contain_file("#{path}/kadm5.acl") }
     end
   end
 end
