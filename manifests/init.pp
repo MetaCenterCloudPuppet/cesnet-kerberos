@@ -25,9 +25,9 @@ class kerberos(
   if $kdc_hostnames and member($kdc_hostnames, $_kadmin_hostname) {
     $_kdc_hostnames = $kdc_hostnames
   } else {
-    $_kdc_hostnames = [$_kadmin_hostname] + pick($kdc_hostnames, [])
+    $_kdc_hostnames = concat([$_kadmin_hostname], pick($kdc_hostnames, []))
   }
-  $kprop_hostnames = $_kdc_hostnames[1, -1]
+  $kprop_hostnames = difference($_kdc_hostnames, [$_kdc_hostnames[0]])
 
   $_client_properties = deep_merge({
     'libdefaults' => {
@@ -37,7 +37,7 @@ class kerberos(
       'dns_fallback' => 'no',
     },
     'realms' => {
-      $realm => {
+      "${realm}" => {
         'kdc' => $_kdc_hostnames,
         'admin_server' => $_kadmin_hostname,
         'default_domain' => $::domain,
@@ -45,7 +45,7 @@ class kerberos(
     },
     'domain_realm' => {
       ".${::domain}" => $realm,
-      $::domain => $realm,
+      "${::domain}" => $realm,
     },
   }, $client_properties)
   $_kdc_properties = deep_merge({
@@ -53,7 +53,7 @@ class kerberos(
       'kdc_ports' => '88',
     },
     'realms' => {
-      $realm => {
+      "${realm}" => {
         'database_name' => "${::kerberos::kdc_data_dir}/principal",
         'acl_file' => "${::kerberos::kdc_conf_dir}/kadm5.acl",
         #'key_stash_file' => '/etc/krb5kdc/stash',
