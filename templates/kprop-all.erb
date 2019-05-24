@@ -1,0 +1,12 @@
+#! /bin/sh -e
+
+kdclist='<%= @kprop_hostnames.join(' ') -%>'
+
+kdb5_util dump <%= @kdc_data_dir -%>/slave_datatrans
+
+err=0
+for kdc in $kdclist; do
+	kprop -f <%= @kdc_data_dir -%>/slave_datatrans $kdc || err=$?
+done
+
+return $err

@@ -1,0 +1,29 @@
+<%
+  def gen(key, values, intent)
+    if values.nil?
+      "# #{key} is empty\n"
+    elsif values.is_a?(Hash)
+      s = "#{intent}#{key} = {\n"
+      values.each do |k, v|
+        s += gen(k, v, intent + "\t")
+      end
+      s += "#{intent}}\n"
+    elsif values.is_a?(Array)
+      "#{intent}#{key} = " + values.join("\n#{intent}#{key} = ") + "\n"
+    else
+      if values == '::undef' || values == ':undef'
+        ''
+      else
+        "#{intent}#{key} = #{values}\n"
+      end
+    end
+  end
+
+-%>
+<% @properties.each do |section_key, section_values| -%>
+[<%= section_key -%>]
+<%   section_values.each do |k, v| -%>
+<%=    gen(k, v, "\t") -%>
+<%   end -%>
+
+<% end -%>

@@ -1,0 +1,62 @@
+{
+  "name": "cesnet-kerberos",
+  "version": "0.1.0",
+  "author": "Frantisek Dvorak <valtri@civ.zcu.cz>",
+  "summary": "Kerberos",
+  "license": "MIT",
+  "source": "https://github.com/MetaCenterCloudPuppet/cesnet-kerberos",
+  "project_page": "https://github.com/MetaCenterCloudPuppet/cesnet-kerberos",
+  "issues_url": "https://github.com/MetaCenterCloudPuppet/cesnet-kerberos/issues",
+  "tags": [
+    "kerberos",
+    "MIT",
+    "security"
+  ],
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "CentOS",
+      "operatingsystemrelease": [
+        "6", "7"
+      ]
+    },
+    {
+      "operatingsystem": "Debian",
+      "operatingsystemrelease": [
+        "7", "8", "9"
+      ]
+    },
+    {
+      "operatingsystem": "Fedora"
+    },
+    {
+      "operatingsystem": "RedHat",
+      "operatingsystemrelease": [
+        "6", "7"
+      ]
+    },
+    {
+      "operatingsystem": "Scientific",
+      "operatingsystemrelease": [
+        "6", "7"
+      ]
+    },
+    {
+      "operatingsystem": "Ubuntu",
+      "operatingsystemrelease": [
+        "14.04", "16.04"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 3.4.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 1.0.0 <5.0.0"
+    }
+  ]
+}
