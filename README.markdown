@@ -12,9 +12,10 @@
 3. [Usage - Configuration options and additional functionality](#usage)
 4. [Reference - An under-the-hood peek at what the module is doing and how](#reference)
     * [Classes](#classes)
-    * [Facts](#facts)
     * [Resource Types](#resources)
-    * [Module Parameters (hadoop class)](#class-hadoop)
+	 * [kerberos\_policy](#resource-kerberos_policy)
+	 * [kerberos\_principal](#resource-kerberos_principal)
+    * [Module Parameters (kerberos class)](#class-kerberos)
 5. [Limitations - OS compatibility, etc.](#limitations)
 6. [Development - Guide for contributing to the module](#development)
 
@@ -73,6 +74,23 @@ Note: *kadmin\_hostname* is automatically added to KDC hostnames in *krb5.conf*.
 By default the main *kerberos* class install services according to set hostnames. It is possible to disable it by *perform* parameter and place particular classes on the nodes manually.
 
 TODO: perform=false, overrides for krb5.conf (DNS aliases) and kdc.conf (algorithms).
+
+	kerberos_policy{'default':
+		ensure               => 'present',
+		minlength            => 6,
+		history              => 2,
+		maxlife              => '365 days 0:00:00',
+		failurecountinterval => '0:00:00',
+	}
+
+    kerberos_principal{'hawking@EXAMPLE.COM':
+      ensure     => 'present',
+      attributes => {
+        'allow_tix'        => true,
+        'requires_preauth' => true,
+      },
+      policy     => 'default',
+    }
 
 <a name="reference"></a>
 ##Reference
@@ -191,6 +209,107 @@ Password of the principal for remote access to KDC. Default: undef.
 #####`remote_principal`
 
 Principal name for remote access to KDC. Default: "puppet/admin@$realm".
+
+<a name="resources"></a>
+###Resource Types
+
+* **`kerberos_principal`**: Kerberos principal on admin server
+* **`kerberos_policy`**: Kerberos policy on admin server
+
+<a name="resource-kerberos_principal"></a>
+### `kerberos_principal` resource
+
+<a name="parameters"></a>
+#### Parameters
+
+#####`title`
+
+Kerberos principal name
+
+#####`attributes`
+
+Kerberos principal attribues. Default: undef.
+
+Hash of principal boolean attributes values. Specified attribues are compared with the real values and updated, if needed. Not specified attributes are not checked.
+
+List of known attributes:
+
+* *allow\_postdated*
+* *allow\_forwardable*
+* *allow\_tgs\_req*
+* *allow\_renewable*
+* *allow\_proxiable*
+* *allow\_dup\_skey*
+* *allow\_tix*
+* *allow\_svr*
+* *requires\_preauth*
+* *requires\_hwauth*
+* *needchange*
+* *password\_changing\_service*
+* *ok\_as\_delegate*
+* *ok\_to\_auth\_as\_delegate*
+* *no\_auth\_data\_required*
+* *lockdown\_keys*
+
+Example:
+
+    attributes => {
+      allow_tix        => true,
+      requires_preauth => true,
+    }
+
+#####`policy`
+
+Kerberos policy of the principal. Default: undef.
+
+<a name="resource-kerberos_policy"></a>
+### `kerberos_policy` resource
+
+The times can be specified as:
+
+* number of seconds
+* *HH:MM:SS*
+* *N day HH:MM:SS*
+* *N days HH:MM:SS*
+
+<a name="parameters"></a>
+#### Parameters
+
+#####`title`
+
+Kerberos policy name.
+
+#####`maxlife`
+
+Maximum password life. Default: undef ('0 days 00:00:00').
+
+#####`minlife`
+
+Minimum password life. Default: undef ('0 days 00:00:00').
+
+#####`minlength`
+
+Minimum password length. Default: undef (1).
+
+#####`minclasses`
+
+Minimum number of password character classes. Default: undef (1).
+
+#####`history`
+
+Number of old keys kept. Default: undef (1).
+
+#####`maxfailure`
+
+Maximum password failures before lockout. Default: undef (0).
+
+#####`failurecountinterval`
+
+Password failure count reset interval. Default: undef ('0 days 00:00:00').
+
+#####`lockoutduration`
+
+Password lockout duration. Default: undef ('0 days 00:00:00').
 
 <a name="limitations"></a>
 ##Limitations
