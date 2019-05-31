@@ -16,8 +16,7 @@ Example:
   ensurable
 
   autorequire(:exec) { 'kdb5_util-create' }
-  self[:policy] &&
-    autorequire(:kerberos_policy) { self[:policy] }
+  autorequire(:kerberos_policy) { self[:policy] }
 
   newparam(:name, namevar: true) do
     desc 'Name of the Kerberos principal'
