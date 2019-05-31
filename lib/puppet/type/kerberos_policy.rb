@@ -18,8 +18,8 @@ KERBEROS_POLICY_TIME_PROPERTIES = %w(
 
 def kerberos_munge_time(value)
   return nil if value.nil?
-  return 0 if value.empty?
   return value if value.is_a?(Integer)
+  return 0 if value.empty?
   match = value.match(/((\d+)\s+day(s)?\s+)?(\d+)\s*:\s*(\d+)\s*:\s*(\d+)/)
   if match
     days = match[2] ? match[2].to_i : 0
