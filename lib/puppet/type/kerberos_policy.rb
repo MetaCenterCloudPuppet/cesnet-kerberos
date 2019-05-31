@@ -47,6 +47,8 @@ Example:
 
   ensurable
 
+  autorequire(:exec) { 'kdb5_util-create' }
+
   newparam(:name, namevar: true) do
     desc 'Name of the Kerberos policy'
   end
@@ -65,9 +67,5 @@ Example:
         end
       end
     end
-  end
-
-  autorequire(:exec) do
-    'kdb5_util-create'
   end
 end
