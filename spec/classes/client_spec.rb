@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'kerberos::client::config', :type => 'class' do
-  on_supported_os($test_os).each do |os,facts|
+describe 'kerberos::client::config', type: 'class' do
+  on_supported_os($test_os).each do |os, facts|
     context "on #{os}" do
       let(:facts) do
         facts
@@ -12,8 +12,8 @@ describe 'kerberos::client::config', :type => 'class' do
   end
 end
 
-describe 'kerberos::client', :type => 'class' do
-  on_supported_os($test_os).each do |os,facts|
+describe 'kerberos::client', type: 'class' do
+  on_supported_os($test_os).each do |os, facts|
     context "on #{os}" do
       let(:facts) do
         facts

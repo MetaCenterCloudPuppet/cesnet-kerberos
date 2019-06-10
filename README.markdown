@@ -13,6 +13,7 @@
 4. [Reference - An under-the-hood peek at what the module is doing and how](#reference)
     * [Classes](#classes)
     * [Resource Types](#resources)
+	 * [kerberos::keytab](#resource-kerberos_keytab)
 	 * [kerberos\_policy](#resource-kerberos_policy)
 	 * [kerberos\_principal](#resource-kerberos_principal)
     * [Module Parameters (kerberos class)](#class-kerberos)
@@ -75,13 +76,13 @@ By default the main *kerberos* class install services according to set hostnames
 
 TODO: perform=false, overrides for krb5.conf (DNS aliases) and kdc.conf (algorithms).
 
-	kerberos_policy{'default':
-		ensure               => 'present',
-		minlength            => 6,
-		history              => 2,
-		maxlife              => '365 days 0:00:00',
-		failurecountinterval => '0:00:00',
-	}
+    kerberos_policy{'default':
+      ensure               => 'present',
+      minlength            => 6,
+      history              => 2,
+      maxlife              => '365 days 0:00:00',
+      failurecountinterval => '0:00:00',
+    }
 
     kerberos_principal{'hawking@EXAMPLE.COM':
       ensure     => 'present',
@@ -110,6 +111,20 @@ TODO: perform=false, overrides for krb5.conf (DNS aliases) and kdc.conf (algorit
 #####`acl`
 
 ACL to Kerberos database. Default: "puppet/admin@${realm} ci \*@${realm}"
+
+#####`admin_password`
+
+Password of the principal for remote access to KDC. Default: undef.
+
+**Required** for initial bootstrap of multiple KDC servers.
+
+#####`admin_principal`
+
+Principal name for remote access to KDC. Default: "puppet/admin@$realm".
+
+#####`admin_keytab`
+
+Keytab for remote access to KDC. Default: undef.
 
 #####`client_packages`
 
@@ -200,16 +215,6 @@ Automagically deploy all services on the nodes. Default: true.
 
 Kerberos realm name. Required.
 
-#####`remote_password`
-
-Password of the principal for remote access to KDC. Default: undef.
-
-**Required** for initial bootstrap.
-
-#####`remote_principal`
-
-Principal name for remote access to KDC. Default: "puppet/admin@$realm".
-
 <a name="resources"></a>
 ###Resource Types
 
@@ -225,6 +230,22 @@ Principal name for remote access to KDC. Default: "puppet/admin@$realm".
 #####`title`
 
 Kerberos principal name
+
+#####`admin_principal`
+
+Admin principal. Default: undef.
+
+#####`admin_keytab`
+
+Admin keytab. Default: undef.
+
+Non-empty parameter will switch from *kadmin.local* do *kadmin*.
+
+#####`admin_password`
+
+Admin password. Default: undef.
+
+Non-empty parameter will switch from *kadmin.local* do *kadmin*.
 
 #####`attributes`
 
@@ -258,9 +279,54 @@ Example:
       requires_preauth => true,
     }
 
+#####`local`
+
+Prefer *kadmin.local* over *kadmin*. Default: (false when *admin\_keytab* or *admin\_password* parameters non-empty)
+
 #####`policy`
 
 Kerberos policy of the principal. Default: undef.
+
+<a name="resource-kerberos_keytab"></a>
+### `kerberos_keytab` resource
+
+Use *admin\_\** parameters from *kerberos* class.
+
+<a name="parameters"></a>
+#### Parameters
+
+#####`title`
+
+Keytab file.
+
+#####`principals`
+
+Principals to add into keytab. Required.
+
+#####`owner`
+
+Keytab file owner. Default: undef.
+
+#####`group`
+
+Keytab file group. Default: undef.
+
+#####`local`
+
+Prefer *kadmin.local* oner *kadmin*. Default: (autodetect by FQDN)
+
+Requirements:
+
+1. remote administration using *kadmin*: *kerberos::admin_keytab* or *kerberos::admin_password* parameter
+2. local administration using *kadmin.local*: placement on Kerberos kadmin server
+
+#####`mode`
+
+Keytab file mode. Default: '0600'.
+
+#####`wait`
+
+Repeated tries time. Default: 0 (try once).
 
 <a name="resource-kerberos_policy"></a>
 ### `kerberos_policy` resource
@@ -316,7 +382,7 @@ Password lockout duration. Default: undef ('0 days 00:00:00').
 
 kadmin must be collocated with KDC, see [Beginning with Kerberos](#beginning-with-kerberos). *krb5.conf* can be overriden after the successfull installation. Another option is to bootstrap manually - copying host keys from admin server to KDC slaves.
 
-TODO: kerberos resource for principal and boostrap process is not implemented. For now the manual intervention is still needed.
+TODO: bootstrap process is not implemented. For now the manual intervention is still needed.
 
 There is no special care for the password parameters (*master\_password*, *remote\_password*).
 

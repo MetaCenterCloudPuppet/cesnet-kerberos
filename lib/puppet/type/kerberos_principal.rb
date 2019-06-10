@@ -1,3 +1,5 @@
+require 'puppet/parameter/boolean'
+
 Puppet::Type.newtype(:kerberos_principal) do
   @doc = "Create a new Kerberos principal. It must be launched on admin server.
 
@@ -15,6 +17,10 @@ Example:
 
   ensurable
 
+  autorequire(:class) { 'kerberos' }
+  autorequire(:class) { 'kerberos::client' }
+  autorequire(:class) { 'kerberos::kadmin' }
+  autorequire(:class) { 'kerberos::kdc' }
   autorequire(:exec) { 'kdb5_util-create' }
   autorequire(:kerberos_policy) { self[:policy] }
 
@@ -24,6 +30,23 @@ Example:
 
   newparam(:password) do
     desc 'Principal password. If not specified, random key will be used.'
+  end
+
+  newparam(:admin_principal) do
+    desc 'Admin principal for kadmin or kadmin.local client.'
+  end
+
+  newparam(:admin_password) do
+    desc 'Admin password for remote kadmin client.'
+  end
+
+  newparam(:admin_keytab) do
+    desc 'Admin keytab for remote kadmin client.'
+  end
+
+  newparam(:local, boolean: true, parent: Puppet::Parameter::Boolean) do
+    desc 'Prefer kadmin.local (default is according to admin_password or \
+admin_keytab parameters).'
   end
 
   newproperty(:attributes) do

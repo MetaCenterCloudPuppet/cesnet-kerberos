@@ -22,6 +22,20 @@ describe 'kerberos_principal', type: 'define' do
         end
         it { should compile }
       end
+
+      context 'with admin_password' do
+        let(:params) do
+          super().merge('admin_password' => 'changeit')
+        end
+        it { should compile }
+      end
+
+      context 'with admin_keytab' do
+        let(:params) do
+          super().merge('admin_keytab' => '/etc/krb5.keytab')
+        end
+        it { should compile }
+      end
     end
   end
 end

@@ -1,5 +1,6 @@
 Puppet::Type.type(:kerberos_principal).provide(:mit) do
-  commands kadmin: 'kadmin.local'
+  optional_commands kadmin_local: 'kadmin.local'
+  optional_commands kadmin_remote: 'kadmin'
 
   mk_resource_methods
 
@@ -22,6 +23,36 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
     'LOCKDOWN_KEYS' => 'lockdown_keys'
   }
 
+  create_class_and_instance_method('local?') do |resource|
+    if resource.value(:local).nil?
+      !resource.value(:admin_keytab) && !resource.value(:admin_password)
+    else
+      resource.value(:local)
+    end
+  end
+
+  # For instance method set *resource* to @resource.
+  #
+  # For class method set *resource* to the initial instance with required
+  # parameters and properties set (from self.prefetch).
+  create_class_and_instance_method('kadmin_cmd') do |resource, *args|
+    admin_args = []
+    resource.value(:admin_principal) &&
+      admin_args << '-p' << resource.value(:admin_principal)
+    if local?(resource)
+      kadmin_local(admin_args + args)
+    else
+      resource.value(:admin_password) &&
+        admin_args << '-w' << resource.value(:admin_password)
+      unless resource.value(:admin_keytab).nil?
+        admin_args << '-k'
+        resource.value(:admin_keytab).empty? ||
+          admin_args << '-t' << resource.value(:admin_keytab)
+      end
+      kadmin_remote(admin_args + args)
+    end
+  end
+
   def create
     args = ['add_principal']
     @resource.value(:attributes).each_pair do |attr, value|
@@ -36,12 +67,12 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
     end
     @resource.value(:policy) &&
       args << ['-policy', @resource.value(:policy)]
-    kadmin(args + [@resource.value(:name)])
+    kadmin_cmd(@resource, args + [@resource.value(:name)])
   end
 
   def exists?
     begin
-      output = kadmin('get_principal', @resource.value(:name))
+      output = kadmin_cmd(@resource, 'get_principal', @resource.value(:name))
     rescue
       return false
     end
@@ -51,7 +82,7 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
   end
 
   def destroy
-    kadmin('delete_principal', @resource.value(:name))
+    kadmin_cmd(@resource, 'delete_principal', @resource.value(:name))
   end
 
   def self.parse_attributes(krbattrs, input_attributes = {})
@@ -63,7 +94,7 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
     attributes = default
     krbattrs.split(/ +/).each do |krbattr|
       key = ATTRS_MAP[krbattr]
-      # debug(" ==> attr: #{key}\n")
+      # debug(" ==> attr: #{key}")
       attributes[key] = (key =~ /^allow_.*$/).nil?
     end
     attributes.select { |k, _v| input_attributes.key?(k) }
@@ -79,23 +110,23 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
       entry[:attributes] = parse_attributes(m[1], input_attributes)
   end
 
-  def self.query_principal(name, input_attributes = {})
-    output = kadmin('get_principal', name)
+  def self.query_principal(name, resource)
+    output = kadmin_cmd(resource, 'get_principal', name)
 
     entry = { name: name, policy: '' }
     output.split(/\n/).map(&:strip).each do |line|
-      principal_parse_line(line, entry, input_attributes)
+      principal_parse_line(line, entry, resource.value(:attributes))
     end
-    debug("relevant attributes of #{name}: #{entry[:attributes]}\n")
+    debug("relevant attributes of #{name}: #{entry[:attributes]}")
     entry
   end
 
   def self.prefetch(resources)
     resources.each do |name, resource|
       begin
-        # debug("prefetching #{name}\n")
+        # debug("prefetching #{name}")
         resource.provider =
-          new(query_principal(name, resource.value(:attributes)))
+          new(query_principal(name, resource))
       rescue
         nil
       end
@@ -109,7 +140,8 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
       args << "#{op}#{attr}"
     end
     args.empty? ||
-      kadmin(['modify_principal'] + args + [@resource.value(:name)])
+      kadmin_cmd(@resource, ['modify_principal'] + args +
+        [@resource.value(:name)])
   end
 
   def policy=(new_policy)
@@ -118,6 +150,7 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
     else
       args = ['-clearpolicy']
     end
-    kadmin(['modify_principal'] + args + [@resource.value(:name)])
+    kadmin_cmd(@resource, ['modify_principal'] + args +
+      [@resource.value(:name)])
   end
 end

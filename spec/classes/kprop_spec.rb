@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'kerberos::kprop::config', :type => 'class' do
-  on_supported_os($test_os).each do |os,facts|
+describe 'kerberos::kprop::config', type: 'class' do
+  on_supported_os($test_os).each do |os, facts|
     path = $test_config_dir[facts[:osfamily]]
     context "on #{os}" do
       let(:facts) do
@@ -13,8 +13,8 @@ describe 'kerberos::kprop::config', :type => 'class' do
   end
 end
 
-describe 'kerberos::kprop', :type => 'class' do
-  on_supported_os($test_os).each do |os,facts|
+describe 'kerberos::kprop', type: 'class' do
+  on_supported_os($test_os).each do |os, facts|
     context "on #{os}" do
       let(:facts) do
         facts
