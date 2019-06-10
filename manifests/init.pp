@@ -17,28 +17,28 @@ class kerberos(
   $kdc_properties = undef,
   $krb5_conf = $::kerberos::params::default_krb5_conf,
   $master_password = undef,
-  $perform = true,
   $admin_keytab = undef,
   $admin_password = undef,
   $admin_principal = undef,
+  $domain = $::domain,
+  $perform = true,
 ) inherits kerberos::params {
   include ::stdlib
 
   $_kadmin_hostname = pick($kadmin_hostname, $::fqdn)
-  # limitation for easier deployment using Kerberos: kadmin must be KDC
-  if $kdc_hostnames and member($kdc_hostnames, $_kadmin_hostname) {
-    $_kdc_hostnames = $kdc_hostnames
-  } else {
-    $_kdc_hostnames = concat([$_kadmin_hostname], pick($kdc_hostnames, []))
-  }
-  $kprop_hostnames = difference($_kdc_hostnames, [$_kdc_hostnames[0]])
+  $_kdc_hostnames = pick($kdc_hostnames, [$_kadmin_hostname])
+  $kprop_hostnames = difference($_kdc_hostnames, [$_kadmin_hostname])
 
-  $_admin_principal = pick($admin_principal, "puppet/admin@${realm}")
-  $_acl = concat([
-    "${_admin_principal}	admcil	*/*@${realm}",
-    "${_admin_principal}	admcil	*@${realm}",
-    "${_admin_principal}	admcil	*",
-  ], $acl)
+  if $admin_principal {
+    $admin_acl = [
+      "${admin_principal}	admcil	*/*@${realm}",
+      "${admin_principal}	admcil	*@${realm}",
+      "${admin_principal}	admcil	*",
+    ]
+  } else {
+    $admin_acl = []
+  }
+  $_acl = concat($admin_acl, $acl)
 
   $_client_properties = deep_merge({
     'libdefaults' => {

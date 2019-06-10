@@ -6,16 +6,16 @@
 
 1. [Module Description - What the module does and why it is useful](#module-description)
 2. [Setup - The basics of getting started with Kerberos](#setup)
-    * [What cesnet-kereros module affects](#what-kerberos-affects)
+    * [What cesnet-kerberos module affects](#what-kerberos-affects)
     * [Setup requirements](#setup-requirements)
     * [Beginning with Kerberos](#beginning-with-kerberos)
 3. [Usage - Configuration options and additional functionality](#usage)
 4. [Reference - An under-the-hood peek at what the module is doing and how](#reference)
     * [Classes](#classes)
     * [Resource Types](#resources)
-	 * [kerberos::keytab](#resource-kerberos_keytab)
-	 * [kerberos\_policy](#resource-kerberos_policy)
-	 * [kerberos\_principal](#resource-kerberos_principal)
+     * [kerberos::keytab](#resource-kerberos_keytab)
+     * [kerberos\_policy](#resource-kerberos_policy)
+     * [kerberos\_principal](#resource-kerberos_principal)
     * [Module Parameters (kerberos class)](#class-kerberos)
 5. [Limitations - OS compatibility, etc.](#limitations)
 6. [Development - Guide for contributing to the module](#development)
@@ -37,7 +37,7 @@ This module deploys MIT Kerberos client and servers.
  * */var/lib/krb5kdc* or */var/kerberos/krb5kdc* directory: Kerberos database
  * */usr/local/sbin/kerberos-kprop-all*: propagation script on Kerberos admin server
 * Packages: MIT Kerberos packages as needed (client, kadmin, krb5kdc, kpropd)
-* Services: MIT Kerberos services as needed (kadmin, krb5kdc, kprop)
+* Services: MIT Kerberos services as needed (kadmin, krb5kdc, kpropd)
 
 <a name="setup-requirements"></a>
 ###Setup Requirements
@@ -47,34 +47,176 @@ Puppet >= 3.x.
 There are required passwords in parameters:
 
 * *master\_password*: master password for KDC database (needed only during initial bootstrap)
-* TODO: *remote\_password*: password for remote admin principal (needed only during initial bootstrap)
 
-Parameters can be removed after the complete installation.
+For multi node setup:
+
+* *admin\_principal*: admin principal name
+* *admin\_password*: password for remote admin principal (needed only during initial bootstrap)
+
+Parameters could be removed after the complete installation.
 
 <a name="beginning-with-kerberos"></a>
 ###Beginning with Kerberos
 
-    $kadmin_hostname = "kadmin.${domain}"
-    $kdc_hostnames = [
-    	"kdc1.${domain}",
-    	"kdc2.${domain}",
-    ]
-    
+Everything on one machine (client, admin server, KDC server):
+
     class{'kerberos':
-    	kadmin_hostname   => $kadmin_hostname,
-    	kdc_hostnames     => $kdc_hostnames,
-    	master_password   => 'strong-master-password',
-    	realm             => 'MONKEY_ISLAND',
+      kadmin_hostname => $::fqdn,
+      master_password => 'strong-master-password',
+      realm           => 'MONKEY_ISLAND',
     }
 
-Note: *kadmin\_hostname* is automatically added to KDC hostnames in *krb5.conf*. This is needed for bootstrapping process - copying Kerberos host keys from admin server to KDC slaves using Kerberos KDC on the admin server.
+    node default {
+      $princ = "host/${::fqdn}@${::kerberos::realm}"
+      kerberos_principal{$princ:
+        ensure     => present,
+        attributes => {
+          requires_preauth => true,
+        },
+        policy     => 'default_host',
+      }
+      -> kerberos::keytab{'/etc/krb5.keytab':
+        principals => [$princ],
+      }
+
+      kerberos_policy{'default':
+        ensure     => 'present',
+        minlength  => 6,
+        history    => 2,
+        maxlife    => '365 days 0:00:00',
+      }
+
+      kerberos_policy{'default_host':
+        ensure     => 'present',
+        minlength  => 8,
+      }
+    }
+
+Note: all principals and keytab needs to be specified.
 
 <a name="usage"></a>
 ##Usage
 
+More advanced usage with multiple KDC servers and separated clients:
+
+    include ::stdlib
+
+    $kadmin_hostname = "kadmin.${domain}"
+    $kdc_hostnames = [
+      "kadmin.${domain}",
+      "kdc1.${domain}",
+      "kdc2.${domain}",
+    ]
+    $realm = 'MONKEY_ISLAND'
+    $host_principals = suffix(prefix($kdc_hostnames, 'host/'), "@${realm}")
+
+    class{'kerberos':
+      client_properties => {
+        'realms' => {
+          "${realm}" => {
+            'kdc' => ['kadmin-alias', 'kdc1-alias', 'kdc2-alias'],
+            'admin_server' => 'kadmin-alias',
+          },
+        },
+      },
+      kadmin_hostname   => $kadmin_hostname,
+      kdc_hostnames     => $kdc_hostnames,
+      admin_principal   => "puppet/admin@${realm}",
+      admin_password    => 'good-password',
+      master_password   => 'strong-master-password',
+      realm             => $realm,
+    }
+
+    node 'kadmin' {
+      kerberos_principal{$host_principals:
+        ensure     => 'present',
+        attributes => {
+          'requires_preauth' => true,
+        },
+        policy     => 'default_host',
+      }
+      ->kerberos::keytab{'/etc/krb5.keytab':
+        principals => ["host/${::fqdn}@${realm}"],
+      }
+
+      kerberos_principal{$::kerberos::admin_principal:
+        ensure     => 'present',
+        attributes => {
+          'requires_preauth' => true,
+        },
+        password   => $::kerberos::admin_password,
+        policy     => 'default_host',
+      }
+
+      kerberos_policy{'default_host':
+        ensure    => 'present',
+        minlength => 6,
+      }
+
+      kerberos_policy{'default':
+        ensure    => 'present',
+        history   => 2,
+        minlength => 6,
+        maxlife   => '365 days 0:00:00',
+      }
+
+      cron{'kprop-all':
+        command     => '/usr/local/sbin/kerberos-kprop-all > /var/log/kerberos-kprop-all.log 2>&1',
+        environment => 'PATH=/sbin:/usr/sbin:/bin:/usr/bin',
+        hour        => '*',
+        minute      => 0,
+      }
+    }
+
+    node /kdc\d+/ {
+      # this will use kerberos::admin_principal and kerberos::admin_password parameters
+      kerberos::keytab{'/etc/krb5.keytab':
+        principals => ["host/${::fqdn}@${realm}"],
+        wait       => 600,
+      }
+    }
+
+    # all clients
+    node default {
+      # this will use kerberos::admin_principal and kerberos::admin_password parameters
+      kerberos_principal{"host/${::fqdn}@${realm}":
+        ensure          => 'present',
+        admin_principal => $::kerberos::admin_principal,
+        admin_password  => $::kerberos::admin_password,
+        attributes      => {
+          'requires_preauth' => true,
+        },
+        policy          => 'default_host',
+      }
+      ->kerberos::keytab{'/etc/krb5.keytab':
+        principals => ["host/${::fqdn}@${realm}"],
+      }
+    }
+
+Note: **bootstrap**:
+
+For bootstrap process to work, the Kerberos admin server (*kadmin\_hostname*) should be also a KDC server (in *kdc\_hostnames*). This way the Kerberos host keys can be distributed from admin server to KDC slaves using Kerberos KDC on the admin server. Also *admin\_principal* and *admin\_password* are required.
+
+Several iterations must be performed before deployment is successfully finished:
+
+1. (will fail) Kerberos admin server initial database setup + creating admin and KDC host keys
+2. (will wait on KDCs) KDC server setup + fetch host keys created in (1.) into keytabs
+3. (success after all KDC ready) propagate database from admin server to slave KDCs using */usr/local/sbin/kerberos-kprop-all*
+4. (success on KDCs after propagation from admin server) KDC server finalize - stash files for startup
+
+Note 2: **principals and keytabs**
+
+All principals and keytabs need to be explicitly created. Better is to put *kerberos\_principal* resource at admin server to minimize admin password usage. *kerberos::keytab* on remote machines will use admin principal and password once during creating of the keytab files.
+
+Note 3: **perform parameter**
+
 By default the main *kerberos* class install services according to set hostnames. It is possible to disable it by *perform* parameter and place particular classes on the nodes manually.
 
-TODO: perform=false, overrides for krb5.conf (DNS aliases) and kdc.conf (algorithms).
+Note 4: **kprop**
+
+See the example cron job in *kadmin* node.
+
+More examples of Kerberos resources:
 
     kerberos_policy{'default':
       ensure               => 'present',
@@ -100,7 +242,23 @@ TODO: perform=false, overrides for krb5.conf (DNS aliases) and kdc.conf (algorit
 ###Classes
 
 * [**`kerberos`**](#class-kerberos): The main class
-* ...
+* **`kerberos::client`**: Kerberos client
+* `kerberos::client::config`
+* `kerberos::client::install`
+* `kerberos::client::service`
+* **`kerberos::kadmin`**: kadmin server
+* `kerberos::kadmin::config`
+* `kerberos::kadmin::install`
+* `kerberos::kadmin::service`
+* **`kerberos::kdc`**: KDC server
+* `kerberos::kdc::config`
+* `kerberos::kdc::install`
+* `kerberos::kdc::service`
+* **`kerberos::kprop`**: kpropd server
+* `kerberos::kprop::config`
+* `kerberos::kprop::install`
+* `kerberos::kprop::service`
+* `kerberos::params`
 
 <a name="class-kerberos"></a>
 ### `kerberos` class
@@ -137,13 +295,17 @@ Additional client parameters or overrides for *krb5.conf*. Default: undef.
 Example:
 
     client_properties => {
-    	'realms' => {
-    		'MONKEY_ISLAND' => {
-    			'kdc' => ['kadmin-alias', 'kdc-alias1', 'kdc-alias2'],
-    			'admin_server' => 'kadmin-alias',
-    		},
-    	},
+      'realms' => {
+        'MONKEY_ISLAND' => {
+          'kdc' => ['kadmin-alias', 'kdc1-alias', 'kdc2-alias'],
+          'admin_server' => 'kadmin-alias',
+        },
+      },
     },
+
+#####`domain`
+
+Realm DNS domain. Default: *$::domain*.
 
 #####`kadmin_service`
 
@@ -157,7 +319,7 @@ Kerberos admin server packages. Default: by platform.
 
 Kerberos admin server hostname. Default: *$::fqdn*.
 
-It should be real hostname, not DNS alias.
+It should be real hostname, not DNS alias. See *client\_properties* for aliases usage.
 
 #####`kdc_conf`
 
@@ -171,13 +333,13 @@ KDC service name. Default: by platform.
 
 #####`kdc_packages`
 
-KDC packages name. Default: by plaform.
+KDC packages name. Default: by platform.
 
 #####`kdc_hostnames`
 
 KDC hostnames. Default: *kadmin\_hostname* or *$::fqdn*.
 
-It should be real hostnames, not DNS alias.
+It should be real hostnames, not DNS aliases. See *client\_properties* for aliases usage.
 
 #####`kdc_properties`
 
@@ -186,11 +348,11 @@ Additional parameters or overrides for *kdc.conf*. Default: undef.
 Example:
 
     kdc_properties => {
-    	'realms' => {
-    		'MONKEY_ISLAND' => {
-    			'supported_enctypes' => 'aes256-sha1:normal aes128-sha1:normal des3-cbc-sha1:normal arcfour-hmac:normal camellia256-cts:normal camellia128-cts:normal',
-    		},
-    	},
+      'realms' => {
+        'MONKEY_ISLAND' => {
+          'supported_enctypes' => 'aes256-sha1:normal aes128-sha1:normal des3-cbc-sha1:normal arcfour-hmac:normal camellia256-cts:normal camellia128-cts:normal',
+        },
+      },
     },
 
 #####`krb5_conf`
@@ -218,8 +380,9 @@ Kerberos realm name. Required.
 <a name="resources"></a>
 ###Resource Types
 
-* **`kerberos_principal`**: Kerberos principal on admin server
-* **`kerberos_policy`**: Kerberos policy on admin server
+* [**`kerberos::keytab`**](#resource-kerberos_keytab): Kerberos keytab
+* [**`kerberos_principal`**](#resource-kerberos_principal): Kerberos principal on admin server
+* [**`kerberos_policy`**](#resource-kerberos_policy): Kerberos policy on admin server
 
 <a name="resource-kerberos_principal"></a>
 ### `kerberos_principal` resource
@@ -235,23 +398,25 @@ Kerberos principal name
 
 Admin principal. Default: undef.
 
+The admin principal is added to ACL with "acmil" rights.
+
 #####`admin_keytab`
 
 Admin keytab. Default: undef.
 
-Non-empty parameter will switch from *kadmin.local* do *kadmin*.
+Non-empty parameter will switch from *kadmin.local* do *kadmin* in resources.
 
 #####`admin_password`
 
 Admin password. Default: undef.
 
-Non-empty parameter will switch from *kadmin.local* do *kadmin*.
+Non-empty parameter will switch from *kadmin.local* do *kadmin* in resources.
 
 #####`attributes`
 
-Kerberos principal attribues. Default: undef.
+Kerberos principal attributes. Default: undef.
 
-Hash of principal boolean attributes values. Specified attribues are compared with the real values and updated, if needed. Not specified attributes are not checked.
+Hash of principal boolean attributes values. Specified attributes are compared with the real values and updated, if needed. Not specified attributes are not checked.
 
 List of known attributes:
 
@@ -313,11 +478,11 @@ Keytab file group. Default: undef.
 
 #####`local`
 
-Prefer *kadmin.local* oner *kadmin*. Default: (autodetect by FQDN)
+Prefer *kadmin.local* over *kadmin*. Default: (autodetect by FQDN)
 
 Requirements:
 
-1. remote administration using *kadmin*: *kerberos::admin_keytab* or *kerberos::admin_password* parameter
+1. remote administration using *kadmin*: *kerberos::admin\_keytab* or *kerberos::admin\_password* parameter
 2. local administration using *kadmin.local*: placement on Kerberos kadmin server
 
 #####`mode`
@@ -380,11 +545,9 @@ Password lockout duration. Default: undef ('0 days 00:00:00').
 <a name="limitations"></a>
 ##Limitations
 
-kadmin must be collocated with KDC, see [Beginning with Kerberos](#beginning-with-kerberos). *krb5.conf* can be overriden after the successfull installation. Another option is to bootstrap manually - copying host keys from admin server to KDC slaves.
+For automatic bootstrap, kadmin must be collocated with KDC, see [Beginning with Kerberos](#beginning-with-kerberos). Another option is to bootstrap manually - copy host key and database from admin server to KDC slaves.
 
-TODO: bootstrap process is not implemented. For now the manual intervention is still needed.
-
-There is no special care for the password parameters (*master\_password*, *remote\_password*).
+There is no special care for the password parameters (*master\_password*, *admin\_password*). After initial deployment, it is possible to remove *master\_password* from parameters. It will be needed only when adding another KDC server.
 
 <a name="development"></a>
 ##Development

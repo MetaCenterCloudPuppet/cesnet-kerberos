@@ -15,4 +15,11 @@ class kerberos::kadmin::service() {
       File[$::kerberos::krb5_conf] ~> Service[$service]
     }
   }
+
+  $touchfile = "${::kerberos::kdc_data_dir}/.puppet-kprop"
+  exec{'/usr/local/sbin/kerberos-kprop-all':
+    command => "/usr/local/sbin/kerberos-kprop-all && touch ${touchfile}",
+    creates => $touchfile,
+    path    => '/sbin:/usr/sbin:/bin:/usr/bin',
+  }
 }

@@ -1,6 +1,6 @@
 # == Define kerberos_keytab
 #
-# Creates the kerberos_keytab remotely.
+# Kerberos keytab.
 #
 # Requires:
 #
