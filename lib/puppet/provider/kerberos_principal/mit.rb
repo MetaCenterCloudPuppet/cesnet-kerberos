@@ -61,7 +61,7 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
     end
     if @resource.value(:password)
       args << '-pw'
-      args << '"' + @resource.value(:password).gsub(/"/, "\\\"") + '"'
+      args << @resource.value(:password)
     else
       args << '-randkey'
     end
