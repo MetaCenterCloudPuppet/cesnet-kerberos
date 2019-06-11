@@ -2,6 +2,12 @@ Puppet::Type.type(:kerberos_policy).provide(:mit) do
   optional_commands kadmin_local: 'kadmin.local'
   optional_commands kadmin_remote: 'kadmin'
 
+  if Puppet.version.nil?
+    @convert = true
+  else
+    @convert = Gem::Version.new(Puppet.version) >= Gem::Version.new('4.0.0')
+  end
+
   mk_resource_methods
 
   create_class_and_instance_method('local?') do |resource|
@@ -64,13 +70,21 @@ Puppet::Type.type(:kerberos_policy).provide(:mit) do
     kadmin_cmd(@resource, 'delete_policy', @resource.value(:name))
   end
 
+  def self.munge_int(value)
+    if @convert
+      value ? value.to_i : 0
+    else
+      value
+    end
+  end
+
   def self.policy_parse_line(line, entry)
     desc, value = line.split(/:\s*/, 2)
     (key = KERBEROS_POLICY_PROPERTIES.key(desc)).nil? && return
     if KERBEROS_POLICY_TIME_PROPERTIES.include?(key)
       entry[key.to_sym] = kerberos_munge_time(value)
     else
-      entry[key.to_sym] = value ? value.to_i : 0
+      entry[key.to_sym] = munge_int(value)
     end
   end
 
