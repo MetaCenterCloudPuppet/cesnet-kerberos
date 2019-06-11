@@ -1,8 +1,8 @@
 {
   "name": "cesnet-kerberos",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "author": "Frantisek Dvorak <valtri@civ.zcu.cz>",
-  "summary": "Kerberos",
+  "summary": "MIT Kerberos",
   "license": "MIT",
   "source": "https://github.com/MetaCenterCloudPuppet/cesnet-kerberos",
   "project_page": "https://github.com/MetaCenterCloudPuppet/cesnet-kerberos",
@@ -10,7 +10,11 @@
   "tags": [
     "kerberos",
     "MIT",
-    "security"
+    "security",
+    "kadmin",
+    "kdc",
+    "kpropd",
+    "krb5.conf"
   ],
   "operatingsystem_support": [
     {
