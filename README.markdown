@@ -14,6 +14,8 @@
     * [Classes](#classes)
     * [Resource Types](#resources)
      * [kerberos::keytab](#resource-kerberos_keytab)
+     * [kerberos::policy](#resource-kerberos_policy)
+     * [kerberos::principal](#resource-kerberos_principal)
      * [kerberos\_policy](#resource-kerberos_policy)
      * [kerberos\_principal](#resource-kerberos_principal)
     * [Module Parameters (kerberos class)](#class-kerberos)
@@ -68,7 +70,7 @@ Everything on one machine (client, admin server, KDC server):
 
     node default {
       $princ = "host/${::fqdn}@${::kerberos::realm}"
-      kerberos_principal{$princ:
+      kerberos::principal{$princ:
         ensure     => present,
         attributes => {
           requires_preauth => true,
@@ -79,20 +81,20 @@ Everything on one machine (client, admin server, KDC server):
         principals => [$princ],
       }
 
-      kerberos_policy{'default':
+      kerberos::policy{'default':
         ensure     => 'present',
         minlength  => 6,
         history    => 2,
         maxlife    => '365 days 0:00:00',
       }
 
-      kerberos_policy{'default_host':
+      kerberos::policy{'default_host':
         ensure     => 'present',
         minlength  => 8,
       }
     }
 
-Note: all principals and keytab needs to be specified.
+Note: as seen int the example: all principals and keytab needs to be specified.
 
 <a name="usage"></a>
 ##Usage
@@ -128,7 +130,7 @@ More advanced usage with multiple KDC servers and separated clients:
     }
 
     node 'kadmin' {
-      kerberos_principal{$host_principals:
+      kerberos::principal{$host_principals:
         ensure     => 'present',
         attributes => {
           'requires_preauth' => true,
@@ -139,7 +141,7 @@ More advanced usage with multiple KDC servers and separated clients:
         principals => ["host/${::fqdn}@${realm}"],
       }
 
-      kerberos_principal{$::kerberos::admin_principal:
+      kerberos::principal{$::kerberos::admin_principal:
         ensure     => 'present',
         attributes => {
           'requires_preauth' => true,
@@ -148,12 +150,12 @@ More advanced usage with multiple KDC servers and separated clients:
         policy     => 'default_host',
       }
 
-      kerberos_policy{'default_host':
+      kerberos::policy{'default_host':
         ensure    => 'present',
         minlength => 6,
       }
 
-      kerberos_policy{'default':
+      kerberos::policy{'default':
         ensure    => 'present',
         history   => 2,
         minlength => 6,
@@ -179,10 +181,8 @@ More advanced usage with multiple KDC servers and separated clients:
     # all clients
     node default {
       # this will use kerberos::admin_principal and kerberos::admin_password parameters
-      kerberos_principal{"host/${::fqdn}@${realm}":
+      kerberos::principal{"host/${::fqdn}@${realm}":
         ensure          => 'present',
-        admin_principal => $::kerberos::admin_principal,
-        admin_password  => $::kerberos::admin_password,
         attributes      => {
           'requires_preauth' => true,
         },
@@ -206,7 +206,7 @@ Several iterations must be performed before deployment is successfully finished:
 
 Note 2: **principals and keytabs**
 
-All principals and keytabs need to be explicitly created. Better is to put *kerberos\_principal* resource at admin server to minimize admin password usage. *kerberos::keytab* on remote machines will use admin principal and password once during creating of the keytab files.
+All principals and keytabs need to be explicitly created. Better is to put *kerberos::principal* resource at admin server to minimize admin password usage. *kerberos::keytab* on remote machines will use admin principal and password once during creating of the keytab files.
 
 Note 3: **perform parameter**
 
@@ -218,7 +218,7 @@ See the example cron job in *kadmin* node.
 
 More examples of Kerberos resources:
 
-    kerberos_policy{'default':
+    kerberos::policy{'default':
       ensure               => 'present',
       minlength            => 6,
       history              => 2,
@@ -226,7 +226,7 @@ More examples of Kerberos resources:
       failurecountinterval => '0:00:00',
     }
 
-    kerberos_principal{'hawking@EXAMPLE.COM':
+    kerberos::principal{'hawking@EXAMPLE.COM':
       ensure     => 'present',
       attributes => {
         'allow_tix'        => true,
@@ -278,7 +278,9 @@ Password of the principal for remote access to KDC. Default: undef.
 
 #####`admin_principal`
 
-Principal name for remote access to KDC. Default: "puppet/admin@$realm".
+Principal name for remote access to KDC. Default: undef.
+
+**Required** for initial bootstrap of multiple KDC servers.
 
 #####`admin_keytab`
 
@@ -381,11 +383,15 @@ Kerberos realm name. Required.
 ###Resource Types
 
 * [**`kerberos::keytab`**](#resource-kerberos_keytab): Kerberos keytab
-* [**`kerberos_principal`**](#resource-kerberos_principal): Kerberos principal on admin server
+* [**`kerberos::policy`**](#resource-kerberos_policy): Kerberos policy (using parameters from *kerberos* class)
+* [**`kerberos::principal`**](#resource-kerberos_principal): Kerberos principal (using parameters from *kerberos* class)
+* [**`kerberos_principal`**](#resource-kerberos_principal): Kerberos principal
 * [**`kerberos_policy`**](#resource-kerberos_policy): Kerberos policy on admin server
 
 <a name="resource-kerberos_principal"></a>
 ### `kerberos_principal` resource
+
+Parameters for *kerberos::principal* are the same, except *admin\_keytab, admin\_password, admin\_principal*, which are taken from the main *kerberos* class parameters.
 
 <a name="parameters"></a>
 #### Parameters
@@ -448,6 +454,10 @@ Example:
 
 Prefer *kadmin.local* over *kadmin*. Default: (false when *admin\_keytab* or *admin\_password* parameters non-empty)
 
+#####`password`
+
+Kerberos principal password. Default: undef (=randomized key).
+
 #####`policy`
 
 Kerberos policy of the principal. Default: undef.
@@ -455,7 +465,7 @@ Kerberos policy of the principal. Default: undef.
 <a name="resource-kerberos_keytab"></a>
 ### `kerberos_keytab` resource
 
-Use *admin\_\** parameters from *kerberos* class.
+Parameters *admin\_keytab, admin\_password, admin\_principal* are taken from the main *kerberos* class parameters.
 
 <a name="parameters"></a>
 #### Parameters
@@ -496,6 +506,8 @@ Repeated tries time. Default: 0 (try once).
 <a name="resource-kerberos_policy"></a>
 ### `kerberos_policy` resource
 
+Parameters for *kerberos::policy* are the same, except *admin\_keytab, admin\_password, admin\_principal*, which are taken from the main *kerberos* class parameters.
+
 The times can be specified as:
 
 * number of seconds
@@ -509,6 +521,22 @@ The times can be specified as:
 #####`title`
 
 Kerberos policy name.
+
+#####`admin_password`
+
+Password of the principal for remote access to KDC. Default: undef.
+
+Non-empty parameter will switch from *kadmin.local* do *kadmin* in resources.
+
+#####`admin_principal`
+
+Principal name for remote access to KDC. Default: undef.
+
+#####`admin_keytab`
+
+Keytab for remote access to KDC. Default: undef.
+
+Non-empty parameter will switch from *kadmin.local* do *kadmin* in resources.
 
 #####`maxlife`
 

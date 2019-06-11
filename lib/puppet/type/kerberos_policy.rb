@@ -47,10 +47,30 @@ Example:
 
   ensurable
 
+  autorequire(:class) { 'kerberos::client' }
+  autorequire(:class) { 'kerberos::kadmin' }
+  autorequire(:class) { 'kerberos::kdc' }
   autorequire(:exec) { 'kdb5_util-create' }
 
   newparam(:name, namevar: true) do
     desc 'Name of the Kerberos policy'
+  end
+
+  newparam(:admin_principal) do
+    desc 'Admin principal for kadmin or kadmin.local client.'
+  end
+
+  newparam(:admin_password) do
+    desc 'Admin password for remote kadmin client.'
+  end
+
+  newparam(:admin_keytab) do
+    desc 'Admin keytab for remote kadmin client.'
+  end
+
+  newparam(:local, boolean: true, parent: Puppet::Parameter::Boolean) do
+    desc 'Prefer kadmin.local (default is according to admin_password or \
+admin_keytab parameters).'
   end
 
   KERBEROS_POLICY_PROPERTIES.each_pair do |name, desc|

@@ -17,7 +17,6 @@ Example:
 
   ensurable
 
-  autorequire(:class) { 'kerberos' }
   autorequire(:class) { 'kerberos::client' }
   autorequire(:class) { 'kerberos::kadmin' }
   autorequire(:class) { 'kerberos::kdc' }
