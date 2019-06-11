@@ -9,4 +9,4 @@ for kdc in $kdclist; do
 	kprop -f <%= @kdc_data_dir -%>/slave_datatrans $kdc || err=$?
 done
 
-return $err
+exit $err
