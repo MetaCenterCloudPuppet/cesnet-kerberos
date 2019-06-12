@@ -99,6 +99,8 @@ Note: as seen int the example: all principals and keytab needs to be specified.
 <a name="usage"></a>
 ##Usage
 
+### Multi-KDC setup
+
 More advanced usage with multiple KDC servers and separated clients:
 
     include ::stdlib
@@ -113,14 +115,6 @@ More advanced usage with multiple KDC servers and separated clients:
     $host_principals = suffix(prefix($kdc_hostnames, 'host/'), "@${realm}")
 
     class{'kerberos':
-      client_properties => {
-        'realms' => {
-          "${realm}" => {
-            'kdc' => ['kadmin-alias', 'kdc1-alias', 'kdc2-alias'],
-            'admin_server' => 'kadmin-alias',
-          },
-        },
-      },
       kadmin_hostname   => $kadmin_hostname,
       kdc_hostnames     => $kdc_hostnames,
       admin_principal   => "puppet/admin@${realm}",
@@ -216,7 +210,26 @@ Note 4: **kprop**
 
 See the example cron job in *kadmin* node.
 
-More examples of Kerberos resources:
+### DNS aliases
+
+It is the best-practice to use DNS aliases in *krb5.conf*. Kerberos puppet module requires real hostnames in its parameters, but aliases can be set using client overrides:
+
+    ...
+    class{'kerberos':
+      client_properties => {
+        'realms' => {
+          "${realm}" => {
+            'kdc' => ['kadmin-alias', 'kdc1-alias', 'kdc2-alias'],
+            'admin_server' => 'kadmin-alias',
+          },
+        },
+      },
+      kadmin_hostname   => $kadmin_hostname,
+      kdc_hostnames     => $kdc_hostnames,
+	  ...
+    }
+
+### More Kerberos module resources examples
 
     kerberos::policy{'default':
       ensure               => 'present',
@@ -234,6 +247,10 @@ More examples of Kerberos resources:
       },
       policy     => 'default',
     }
+
+Note: defaults
+
+*default_attributes* and *default_policy* parameters on *kerberos* class can be used instead of parameters in *kerberos::principal*.
 
 <a name="reference"></a>
 ##Reference
@@ -268,7 +285,7 @@ More examples of Kerberos resources:
 
 #####`acl`
 
-ACL to Kerberos database. Default: "puppet/admin@${realm} ci \*@${realm}"
+ACL to Kerberos database. Default: "${admin\_principal} admcil" for everything.
 
 #####`admin_password`
 
@@ -304,6 +321,14 @@ Example:
         },
       },
     },
+
+#####`default_attributes`
+
+Default attributes used in *kerberos::principal* resource. Default: undef.
+
+#####`default_policy`
+
+Default policy name used in *kerberos::principal* resource. Default: undef.
 
 #####`domain`
 
@@ -457,6 +482,8 @@ Prefer *kadmin.local* over *kadmin*. Default: (false when *admin\_keytab* or *ad
 #####`password`
 
 Kerberos principal password. Default: undef (=randomized key).
+
+Passwords are not changed. This parameter is used only when creating a new Kerberos principal.
 
 #####`policy`
 

@@ -21,6 +21,8 @@ class kerberos(
   $admin_password = undef,
   $admin_principal = undef,
   $domain = $::domain,
+  $default_attributes = undef,
+  $default_policy = undef,
   $perform = true,
 ) inherits kerberos::params {
   include ::stdlib

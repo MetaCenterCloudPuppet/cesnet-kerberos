@@ -15,12 +15,23 @@ define kerberos::principal(
   $password = undef,
   $policy = undef,
 ) {
+  include ::stdlib
   include ::kerberos
 
+  if $attributes {
+    $_attributes = $attributes
+  } else {
+    $_attributes = $::kerberos::default_attributes
+  }
   if $local == '::undef' {
     $is_local = $::fqdn == $::kerberos::_kadmin_hostname
   } else {
     $is_local = $local
+  }
+  if $policy {
+    $_policy = $policy
+  } else {
+    $_policy = $::kerberos::default_policy
   }
 
   if $is_local {
@@ -38,9 +49,9 @@ define kerberos::principal(
     admin_keytab    => $admin_keytab,
     admin_password  => $admin_password,
     admin_principal => $admin_principal,
-    attributes      => $attributes,
+    attributes      => $_attributes,
     local           => $is_local,
     password        => $password,
-    policy          => $policy,
+    policy          => $_policy,
   }
 }
