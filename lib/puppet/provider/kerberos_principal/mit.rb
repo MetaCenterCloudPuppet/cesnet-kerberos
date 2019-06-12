@@ -1,7 +1,9 @@
-Puppet::Type.type(:kerberos_principal).provide(:mit) do
-  optional_commands kadmin_local: 'kadmin.local'
-  optional_commands kadmin_remote: 'kadmin'
-
+require File.expand_path(
+  File.join(File.dirname(__FILE__), '..', 'kerberos_mit.rb'))
+Puppet::Type.type(:kerberos_principal).provide(
+  :mit,
+  parent: Puppet::Provider::KerberosMit
+) do
   mk_resource_methods
 
   ATTRS_MAP = {
@@ -22,36 +24,6 @@ Puppet::Type.type(:kerberos_principal).provide(:mit) do
     'NO_AUTH_DATA_REQUIRED' => 'no_auth_data_required',
     'LOCKDOWN_KEYS' => 'lockdown_keys'
   }
-
-  create_class_and_instance_method('local?') do |resource|
-    if resource.value(:local).nil?
-      !resource.value(:admin_keytab) && !resource.value(:admin_password)
-    else
-      resource.value(:local)
-    end
-  end
-
-  # For instance method set *resource* to @resource.
-  #
-  # For class method set *resource* to the initial instance with required
-  # parameters and properties set (from self.prefetch).
-  create_class_and_instance_method('kadmin_cmd') do |resource, *args|
-    admin_args = []
-    resource.value(:admin_principal) &&
-      admin_args << '-p' << resource.value(:admin_principal)
-    if local?(resource)
-      kadmin_local(admin_args + args)
-    else
-      resource.value(:admin_password) &&
-        admin_args << '-w' << resource.value(:admin_password)
-      unless resource.value(:admin_keytab).nil?
-        admin_args << '-k'
-        resource.value(:admin_keytab).empty? ||
-          admin_args << '-t' << resource.value(:admin_keytab)
-      end
-      kadmin_remote(admin_args + args)
-    end
-  end
 
   def create
     args = ['add_principal']
