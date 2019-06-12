@@ -16,7 +16,7 @@ define kerberos::keytab(
   $owner = undef,
   $group = undef,
   $local = '::undef',
-  $mode = '0600',
+  $mode = undef,
   $wait = 0,
 ) {
   include ::kerberos
