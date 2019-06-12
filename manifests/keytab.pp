@@ -68,9 +68,13 @@ define kerberos::keytab(
     tries     => $tries,
     try_sleep => $try_sleep,
   }
-  -> file{$title:
-    owner => $owner,
-    group => $group,
-    mode  => $mode,
+  -> File <| title == $title |>
+
+  if $owner or $group or $mode {
+    file{$title:
+      owner => $owner,
+      group => $group,
+      mode  => $mode,
+    }
   }
 }
