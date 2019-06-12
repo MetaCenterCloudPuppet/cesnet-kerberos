@@ -19,6 +19,7 @@ define kerberos::keytab(
   $mode = undef,
   $wait = 0,
 ) {
+  include ::stdlib
   include ::kerberos
 
   $path = '/sbin:/usr/sbin:/bin:/usr/bin'
@@ -59,7 +60,9 @@ define kerberos::keytab(
 
   $cmd = join($cmd_list, ' ')
   $all_cmds = prefix($principals, "${cmd} ktadd -k '${title}' ")
-  exec{$all_cmds:
+
+  Kerberos_principal <| |>
+  -> exec{$all_cmds:
     path      => $path,
     creates   => $title,
     tries     => $tries,
