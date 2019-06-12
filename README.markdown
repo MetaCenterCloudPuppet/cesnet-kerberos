@@ -94,7 +94,7 @@ Everything on one machine (client, admin server, KDC server):
       }
     }
 
-Note: as seen int the example: all principals and keytab needs to be specified.
+Note: as seen in the example: all principals and keytab needs to be specified.
 
 <a name="usage"></a>
 ##Usage
@@ -226,7 +226,7 @@ It is the best-practice to use DNS aliases in *krb5.conf*. Kerberos puppet modul
       },
       kadmin_hostname   => $kadmin_hostname,
       kdc_hostnames     => $kdc_hostnames,
-	  ...
+      ...
     }
 
 ### More Kerberos module resources examples
