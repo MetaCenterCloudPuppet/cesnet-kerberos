@@ -1,6 +1,6 @@
 {
   "name": "cesnet-kerberos",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Frantisek Dvorak <valtri@civ.zcu.cz>",
   "summary": "MIT Kerberos",
   "license": "MIT",
