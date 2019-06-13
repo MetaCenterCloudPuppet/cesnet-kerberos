@@ -252,6 +252,27 @@ Note: defaults
 
 *default_attributes* and *default_policy* parameters on *kerberos* class can be used instead of parameters in *kerberos::principal*.
 
+### krb5.conf only
+
+    $kadmin_hostname = "KADMIN.example.com"
+    $kdc_hostnames = [
+      "KADMIN.example.com",
+      "KDC1.example.com",
+      "KDC2.example.com",
+    ]
+
+    class{'kerberos':
+      kadmin_hostname   => $kadmin_hostname,
+      kdc_hostnames     => $kdc_hostnames,
+      realm             => 'EXAMPLE.COM',
+      perform           => false,
+
+      # realm-specific config file instead of global config
+      #krb5_conf => '/etc/krb5.conf.d/example_com'
+    }
+
+    include ::kerberos::client::config
+
 <a name="reference"></a>
 ##Reference
 
