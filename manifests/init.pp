@@ -53,12 +53,12 @@ class kerberos(
       "${realm}" => {
         'kdc' => $_kdc_hostnames,
         'admin_server' => $_kadmin_hostname,
-        'default_domain' => $::domain,
+        'default_domain' => $domain,
       },
     },
     'domain_realm' => {
-      ".${::domain}" => $realm,
-      "${::domain}" => $realm,
+      ".${domain}" => $realm,
+      "${domain}" => $realm,
     },
   }, $client_properties)
   $_kdc_properties = deep_merge({
