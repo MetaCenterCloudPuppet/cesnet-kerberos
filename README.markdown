@@ -297,6 +297,7 @@ Note: defaults
 * `kerberos::kprop::install`
 * `kerberos::kprop::service`
 * `kerberos::params`
+* **`kerberos::resources`**: container class over all resources
 
 <a name="class-kerberos"></a>
 ### `kerberos` class
