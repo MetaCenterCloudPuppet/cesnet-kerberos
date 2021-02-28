@@ -10,7 +10,7 @@ group :test do
   end
   gem "puppet", ENV['PUPPET_GEM_VERSION'] || '~> 3.8.0'
   gem "rspec"
-  gem "puppetlabs_spec_helper"
+  gem "puppetlabs_spec_helper", '< 3.0.0' # incompatible with ruby 2.1, unknown minimal version
   if RUBY_VERSION < '2.0.0'
     gem 'metadata-json-lint', '< 1.2.0'
     gem 'rspec-puppet', '< 2.8.0'
@@ -43,6 +43,9 @@ group :test do
     gem 'puppet-lint-unquoted_string-check'
   end
 
+  if RUBY_VERSION < '2.6'
+    gem 'pathspec', '< 1.0.0'
+  end
   if RUBY_VERSION < '2.5'
     gem 'activesupport', '< 6.0.0' if RUBY_VERSION >= '2.2'
   end
