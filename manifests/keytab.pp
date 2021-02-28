@@ -43,7 +43,7 @@ define kerberos::keytab(
       $args_admin_keytab = []
     }
     if $::kerberos::admin_password {
-      $args_admin_password = ['-w', "'${::kerberos::admin_password}'"]
+      $args_admin_password = ['-w', "'${::kerberos::_admin_password_escaped}'"]
     } else {
       $args_admin_password = []
     }

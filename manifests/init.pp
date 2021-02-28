@@ -27,6 +27,8 @@ class kerberos(
 ) inherits kerberos::params {
   include ::stdlib
 
+  $_admin_password_escaped = regsubst($admin_password, '\'', '\'"\'"\'')
+  $_master_password_escaped = regsubst($master_password, '\'', '\'"\'"\'')
   $_kadmin_hostname = pick($kadmin_hostname, $::fqdn)
   $_kdc_hostnames = pick($kdc_hostnames, [$_kadmin_hostname])
   $kprop_hostnames = difference($_kdc_hostnames, [$_kadmin_hostname])

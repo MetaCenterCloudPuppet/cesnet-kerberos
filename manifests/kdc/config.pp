@@ -22,7 +22,7 @@ class kerberos::kdc::config {
   }
   if $::kerberos::master_password {
     exec { 'kdb5_util-stash':
-      command => "kdb5_util stash -P ${::kerberos::master_password}",
+      command => "kdb5_util stash -P '${::kerberos::_master_password_escaped}'",
       path    => '/sbin:/usr/sbin:/bin:/usr/bin',
       creates => "${::kerberos::kdc_conf_dir}/.k5.${::kerberos::realm}",
     }

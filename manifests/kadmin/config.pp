@@ -34,7 +34,7 @@ class kerberos::kadmin::config() {
 
   if $::kerberos::master_password {
     exec { 'kdb5_util-create':
-      command => "kdb5_util create -s -P ${::kerberos::master_password}",
+      command => "kdb5_util create -s -P '${::kerberos::_master_password_escaped}'",
       path    => '/sbin:/usr/sbin:/bin:/usr/bin',
       # reading /dev/random
       timeout => 0,
