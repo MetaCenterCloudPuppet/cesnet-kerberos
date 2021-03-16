@@ -10,6 +10,7 @@ class kerberos::kprop::service() {
 
   if $service {
     service{$service:
+      enable => true,
       ensure => running,
     }
     if $::kerberos::krb5_conf {
