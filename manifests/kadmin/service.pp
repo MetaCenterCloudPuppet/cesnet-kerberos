@@ -9,8 +9,8 @@ class kerberos::kadmin::service() {
 
   if $service {
     service{$service:
-      enable => true,
       ensure => running,
+      enable => true,
     }
     if $::kerberos::krb5_conf {
       File[$::kerberos::krb5_conf] ~> Service[$service]

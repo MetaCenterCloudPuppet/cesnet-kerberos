@@ -1,5 +1,5 @@
 name 'cesnet-kerberos'
-version '1.1.2'
+version '1.1.3'
 source 'https://github.com/MetaCenterCloudPuppet/cesnet-kerberos'
 author 'Frantisek Dvorak <valtri@civ.zcu.cz>'
 license 'MIT'
